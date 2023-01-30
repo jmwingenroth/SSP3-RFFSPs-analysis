@@ -86,4 +86,14 @@ p1 <- left_join(temperature_tidy, scc_tidy) %>%
     geom_point(alpha = .3) +
     facet_wrap(~paste(time, model), scales = "free_y", ncol = 3)
 
-ggsave("scc_vs_absolute_temp.png", p1)
+ggsave("scc_vs_absolute_temp.png", p1, width = 10, height = 10)
+
+p2 <- left_join(temperature_tidy, temperature_pulse_tidy) %>%
+    left_join(scc_tidy) %>%
+    mutate(temperature_marginal = temperature_pulse - temperature) %>%
+    filter(temperature_marginal > -1e-07) %>%                           # There were some strange negative marginal temperature anomalies 
+    ggplot(aes(x = temperature_marginal, y = scc, color = socio)) +
+    geom_point(alpha = .3) +
+    facet_wrap(~paste(time, model), scales = "free_y", ncol = 3)
+
+ggsave("scc_vs_marginal_temp.png", p2, width = 10, height = 10)
