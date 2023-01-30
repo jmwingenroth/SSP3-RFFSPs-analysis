@@ -9,3 +9,17 @@ nunez_ssp3_scc <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/scc.csv
 sectoral_rff_scc <- read_csv("./scghg-RFF-sectoral-2020-CO2-n10000/sc-CO2-n10000.csv")
 sectoral_ssp3_scc <- read_csv("./scghg-SSP3-sectoral-2020-CO2-n10000/sc-CO2-n10000.csv")
 
+bn_rff_temperature <- read_csv("../paper-biodiversity/output/BN-2020-RFF/results/model_1/species_loss_temperature.csv")
+bn_ssp3_temperature <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/model_1/species_loss_temperature.csv")
+nunez_rff_temperature <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/results/model_1/species_loss_temperature.csv")
+nunez_ssp3_temperature <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/results/model_1/species_loss_temperature.csv")
+sectoral_rff_temperature <- read_csv("./covariates-RFF-n10000/results/model_1/TempNorm_1850to1900_global_temperature_norm.csv") # different normalization year
+sectoral_ssp3_temperature <- read_csv("./covariates-SSP3-n10000/results/model_1/TempNorm_1850to1900_global_temperature_norm.csv") # different normalization year
+
+bn_rff_temperature_pulse  <- read_csv("../paper-biodiversity/output/BN-2020-RFF/results/model_2/species_loss_temperature.csv")
+bn_ssp3_temperature_pulse  <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/model_2/species_loss_temperature.csv")
+nunez_rff_temperature_pulse  <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/results/model_2/species_loss_temperature.csv")
+nunez_ssp3_temperature_pulse  <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/results/model_2/species_loss_temperature.csv")
+sectoral_rff_temperature_pulse  <- read_csv("./covariates-RFF-n10000/results/model_2/TempNorm_1850to1900_global_temperature_norm.csv") # different normalization year
+sectoral_ssp3_temperature_pulse  <- read_csv("./covariates-SSP3-n10000/results/model_2/TempNorm_1850to1900_global_temperature_norm.csv") # different normalization year
+
