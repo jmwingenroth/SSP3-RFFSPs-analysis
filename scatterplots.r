@@ -3,12 +3,14 @@ library(tidyverse)
 # Load data
 
 scc <- list()
+cpc <- list()
 temperature <- list()
 temperature_pulse <- list()
 frs <- list()
 frs_pulse <- list()
 damages <- list()
 damages_pulse <- list()
+ypc <- list()
 
 scc[[1]] <- read_csv("../paper-biodiversity/output/BN-2020-RFF/scc.csv")
 scc[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/scc.csv")
@@ -16,6 +18,9 @@ scc[[3]] <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/scc.csv")
 scc[[4]] <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/scc.csv")
 scc[[5]] <- read_csv("./scghg-RFF-sectoral-2020-CO2-n10000/sc-CO2-n10000.csv")
 scc[[6]] <- read_csv("./scghg-SSP3-sectoral-2020-CO2-n10000/sc-CO2-n10000.csv")
+
+cpc[[1]] <- read_csv("./scghg-RFF-sectoral-2020-CO2-n10000/cpc_CO2--n10000-total.csv")
+cpc[[2]] <- read_csv("./scghg-SSP3-sectoral-2020-CO2-n10000/cpc_CO2--n10000-total.csv")
 
 temperature[[1]] <- read_csv("../paper-biodiversity/output/BN-2020-RFF/results/model_1/species_loss_temperature.csv")
 temperature[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/model_1/species_loss_temperature.csv")
@@ -50,6 +55,11 @@ damages_pulse[[1]] <- read_csv("../paper-biodiversity/output/BN-2020-RFF/results
 damages_pulse[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/model_2/DamageAggregator_biodiversity_damage.csv")
 damages_pulse[[3]] <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/results/model_2/DamageAggregator_biodiversity_damage.csv")
 damages_pulse[[4]] <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/results/model_2/DamageAggregator_biodiversity_damage.csv")
+
+ypc[[1]] <- read_csv("../paper-biodiversity/output/BN-2020-RFF/results/model_1/PerCapitaGDP_global_pc_gdp.csv")
+ypc[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/model_1/PerCapitaGDP_global_pc_gdp.csv")
+ypc[[3]] <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/results/model_1/PerCapitaGDP_global_pc_gdp.csv")
+ypc[[4]] <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/results/model_1/PerCapitaGDP_global_pc_gdp.csv")
 
 # Tidy data
 
@@ -107,6 +117,8 @@ for (i in 1:length(frs)) {
     damages[[i]]$socio       <- socioeconomics[i]
     damages_pulse[[i]]$socio <- socioeconomics[i]
 
+    ypc[[i]]$socio <- socioeconomics[i]
+
     if (i <= 2) {
         
         frs[[i]]$model <- models[1]
@@ -114,6 +126,8 @@ for (i in 1:length(frs)) {
 
         damages[[i]]$model <- models[1]
         damages_pulse[[i]]$model <- models[1]
+
+        ypc[[i]]$model <- models[1]
 
     }
 
@@ -124,6 +138,8 @@ for (i in 1:length(frs)) {
         
         damages[[i]]$model <- models[3]
         damages_pulse[[i]]$model <- models[3]
+
+        ypc[[i]]$model <- models[3]
         
     }
 
@@ -135,7 +151,19 @@ for (i in 1:length(frs)) {
 
 }
 
-scc_tidy <- bind_rows(scc) 
+cpc_gr <- cpc %>%
+    lapply(
+        transmute, 
+        growth = log(x281/x1)/280,
+        trialnum = row_number(),
+        model = "Sectoral"
+    )
+
+for (i in 1:length(cpc_gr)) cpc_gr[[i]]$socio <- socioeconomics[i]
+
+scc_tidy <- bind_rows(scc)
+
+cpc_tidy <- bind_rows(cpc_gr)
 
 temperature_tidy <- bind_rows(temperature) %>%
     filter(time %in% seq(2050, 2300, 50))
@@ -154,6 +182,19 @@ damages_tidy <- bind_rows(damages) %>%
 
 damages_pulse_tidy <- bind_rows(damages_pulse) %>%
     filter(time %in% seq(2050, 2300, 50))
+
+ypc_tidy <- ypc %>%
+    lapply(
+        pivot_wider, 
+        names_from = time, 
+        values_from = global_pc_gdp
+    ) %>%
+    lapply(
+        transmute, 
+        growth = log(`2300`/`2020`)/280,
+        trialnum, socio, model
+    ) %>%
+    bind_rows()
 
 # Plot data
 
@@ -212,3 +253,17 @@ p6 <- left_join(damages_tidy, damages_pulse_tidy) %>%
     facet_wrap(~paste(time, model), scales = "free_y", ncol = 2)
 
 ggsave("scc_vs_marginal_damage.png", p6, width = 10, height = 10)
+
+p7 <- left_join(cpc_tidy, scc_tidy) %>%
+    ggplot(aes(x = growth, y = scc, color = socio)) +
+    geom_point(alpha = .3) +
+    facet_wrap(~model, scales = "free_y", ncol = 2)
+
+ggsave("scc_vs_cpc_growth_sectoral.png", p7, width = 10, height = 10)
+
+p8 <- left_join(ypc_tidy, scc_tidy) %>%
+    ggplot(aes(x = growth, y = scc, color = socio)) +
+    geom_point(alpha = .3) +
+    facet_wrap(~model, scales = "free_y", ncol = 2)
+
+ggsave("scc_vs_ypc_growth_biodiversity.png", p8, width = 10, height = 10)
