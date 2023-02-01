@@ -7,6 +7,8 @@ temperature <- list()
 temperature_pulse <- list()
 frs <- list()
 frs_pulse <- list()
+damages <- list()
+damages_pulse <- list()
 
 scc[[1]] <- read_csv("../paper-biodiversity/output/BN-2020-RFF/scc.csv")
 scc[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/scc.csv")
@@ -39,6 +41,16 @@ frs_pulse[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/mo
 frs_pulse[[3]] <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/results/model_2/biodiversity_damages_frs.csv")
 frs_pulse[[4]] <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/results/model_2/biodiversity_damages_frs.csv")
 
+damages[[1]] <- read_csv("../paper-biodiversity/output/BN-2020-RFF/results/model_1/DamageAggregator_biodiversity_damage.csv")
+damages[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/model_1/DamageAggregator_biodiversity_damage.csv")
+damages[[3]] <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/results/model_1/DamageAggregator_biodiversity_damage.csv")
+damages[[4]] <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/results/model_1/DamageAggregator_biodiversity_damage.csv")
+
+damages_pulse[[1]] <- read_csv("../paper-biodiversity/output/BN-2020-RFF/results/model_2/DamageAggregator_biodiversity_damage.csv")
+damages_pulse[[2]] <- read_csv("../paper-biodiversity/output/BN-2020-SSP3/results/model_2/DamageAggregator_biodiversity_damage.csv")
+damages_pulse[[3]] <- read_csv("../paper-biodiversity/output/Nunez-2020-RFF/results/model_2/DamageAggregator_biodiversity_damage.csv")
+damages_pulse[[4]] <- read_csv("../paper-biodiversity/output/Nunez-2020-SSP3/results/model_2/DamageAggregator_biodiversity_damage.csv")
+
 # Tidy data
 
 models <- rep(c("BN", "Nunez", "Sectoral"), each = 2)
@@ -56,8 +68,11 @@ for (i in 1:length(scc)) {
             mutate(trialnum = row_number()) %>%
             select(scc = scghg, trialnum)
 
-        temperature[[i]] <- rename(temperature[[i]], temperature = global_temperature_norm)
-        temperature_pulse[[i]] <- rename(temperature_pulse[[i]], temperature_pulse = global_temperature_norm)
+        temperature[[i]] <- temperature[[i]] %>%
+            rename(temperature = global_temperature_norm)
+
+        temperature_pulse[[i]] <- temperature_pulse[[i]] %>%
+            rename(temperature_pulse = global_temperature_norm)
     
     } else {
     
@@ -69,7 +84,8 @@ for (i in 1:length(scc)) {
             mutate(trialnum = row_number()) %>%
             select(scc, trialnum)
 
-        temperature_pulse[[i]] <- rename(temperature_pulse[[i]], temperature_pulse = temperature)
+        temperature_pulse[[i]] <- temperature_pulse[[i]] %>%
+            rename(temperature_pulse = temperature)
 
     }
     
@@ -88,17 +104,34 @@ for (i in 1:length(frs)) {
     frs[[i]]$socio       <- socioeconomics[i]
     frs_pulse[[i]]$socio <- socioeconomics[i]
 
+    damages[[i]]$socio       <- socioeconomics[i]
+    damages_pulse[[i]]$socio <- socioeconomics[i]
+
     if (i <= 2) {
+        
         frs[[i]]$model <- models[1]
         frs_pulse[[i]]$model <- models[1]
+
+        damages[[i]]$model <- models[1]
+        damages_pulse[[i]]$model <- models[1]
+
     }
 
     if (i > 2)  {
+
         frs[[i]]$model <- models[3]
         frs_pulse[[i]]$model <- models[3]
+        
+        damages[[i]]$model <- models[3]
+        damages_pulse[[i]]$model <- models[3]
+        
     }
 
-    frs_pulse[[i]] <- rename(frs_pulse[[i]], frs_pulse = frs)
+    frs_pulse[[i]] <- frs_pulse[[i]] %>%
+        rename(frs_pulse = frs)
+
+    damages_pulse[[i]] <- damages_pulse[[i]] %>%
+        rename(biodiversity_damage_pulse = biodiversity_damage)
 
 }
 
@@ -114,6 +147,12 @@ frs_tidy <- bind_rows(frs) %>%
     filter(time %in% seq(2050, 2300, 50))
 
 frs_pulse_tidy <- bind_rows(frs_pulse) %>%
+    filter(time %in% seq(2050, 2300, 50))
+
+damages_tidy <- bind_rows(damages) %>%
+    filter(time %in% seq(2050, 2300, 50))
+
+damages_pulse_tidy <- bind_rows(damages_pulse) %>%
     filter(time %in% seq(2050, 2300, 50))
 
 # Plot data
@@ -163,3 +202,13 @@ p5 <- left_join(frs_tidy, frs_pulse_tidy) %>%
     labs(caption = "*focused on Nunez species-loss function range, cropping some Brooks & Newbold data")
 
 ggsave("scc_vs_marginal_frs_zoomed_in.png", p5, width = 10, height = 10)
+
+p6 <- left_join(damages_tidy, damages_pulse_tidy) %>%
+    left_join(scc_tidy) %>%
+    mutate(damage_marginal = (biodiversity_damage_pulse - biodiversity_damage)/1e5/44*12) %>% # 1e-4 GtC pulse size
+    ggplot(aes(x = damage_marginal, y = scc, color = socio)) +
+    geom_point(alpha = .3) +
+    scale_x_log10(labels = scales::dollar, limits = c(0.01, NA)) +
+    facet_wrap(~paste(time, model), scales = "free_y", ncol = 2)
+
+ggsave("scc_vs_marginal_damage.png", p6, width = 10, height = 10)
