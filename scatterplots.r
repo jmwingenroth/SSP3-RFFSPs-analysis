@@ -148,6 +148,18 @@ p4 <- left_join(frs_tidy, frs_pulse_tidy) %>%
     filter(frs_marginal > -1e-07, frs_marginal < 5e-8) %>%              # There were some strange FRS anomalies (positive for Nunez versus negative for B&N due to equation form) 
     ggplot(aes(x = frs_marginal, y = scc, color = socio)) +
     geom_point(alpha = .3) +
-    facet_wrap(~paste(time, model), scales = "free_y", ncol = 2)
+    facet_grid(time~model, scales = "fixed")
 
 ggsave("scc_vs_marginal_frs.png", p4, width = 10, height = 10)
+
+p5 <- left_join(frs_tidy, frs_pulse_tidy) %>%
+    left_join(scc_tidy) %>%
+    mutate(frs_marginal = frs_pulse - frs) %>%
+    filter(frs_marginal > -1e-07, frs_marginal < 5e-8) %>%              # There were some strange FRS anomalies (positive for Nunez versus negative for B&N due to equation form) 
+    ggplot(aes(x = frs_marginal, y = scc, color = socio)) +
+    geom_point(alpha = .3) +
+    facet_grid(time~model, scales = "fixed") +
+    lims(x = c(-2e-8, 0), y = c(NA, 50)) +
+    labs(caption = "*focused on Nunez species-loss function range, cropping some Brooks & Newbold data")
+
+ggsave("scc_vs_marginal_frs_zoomed_in.png", p5, width = 10, height = 10)
